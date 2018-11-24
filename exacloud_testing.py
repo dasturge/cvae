@@ -4,7 +4,7 @@ import os
 import inputs
 
 PROJECT_ROOT = '/home/exacloud/lustre1/fnl_lab/projects/darrick_cnn'
-NIFTI_SRC_ROOT = ''
+NIFTI_SRC_ROOT = '/home/exacloud/lustre1/fnl_lab'
 ESTIMATOR_FOLDER = os.path.join(PROJECT_ROOT, 'vae_model')
 
 
@@ -20,10 +20,13 @@ def maybe_create_record():
     return train_record, test_record
 
 
-def run_model(train_record):
+def run_model():
+    pass
+
+
+def run_hyperparameter_optimization():
     pass
 
 
 if __name__ == '__main__':
     maybe_create_record()
-
