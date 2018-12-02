@@ -17,6 +17,8 @@ def _cli():
                                  'or as space separated list. Not both.'
         with open(args.list) as fd:
             niftis = list(fd.readlines())
+    else:
+        assert niftis is not [], 'no inputs provided.'
 
     single_images_2_tfrecord(args.filename, niftis)
 

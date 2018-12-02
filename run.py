@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+import os
+
 import sklearn
 import skopt
 from skopt.space import Integer, Real
 from skopt.utils import use_named_args
+import tensorflow as tf
+K = tf.keras.backend
 
 import inputs
 import models
@@ -27,7 +31,10 @@ def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
     return m
 
 
-def hyperparameter_optimization(record_files, test_record):
+def hyperparameter_optimization(record_files, test_record, working_dir='./'):
+
+    best_accuracy = 0.0
+    best_model = os.path.join(working_dir, 'best_model.keras')
 
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
     dim_layer_depth = Integer(1, 4, name='layer_depth')
@@ -62,17 +69,43 @@ def hyperparameter_optimization(record_files, test_record):
         :return:
         """
 
-        m = create_model(learning_rate=learning_rate,
-                             layer_depth=layer_depth, n_filters=n_filters,
-                             n_filters_2=n_filters_2,
-                             n_deconv_filters=n_deconv_filters,
-                             n_latent=n_latent, kernel_size=kernel_size)
+        m = create_model(
+            learning_rate=learning_rate, layer_depth=layer_depth,
+            n_filters=n_filters, n_filters_2=n_filters_2,
+            n_deconv_filters=n_deconv_filters, n_latent=n_latent,
+            kernel_size=kernel_size
+        )
 
         # create logging and TensorBoard
 
         # inputs
         # here is where I could implement cross-validation
-        train = inputs.image_input_fn(filenames=record_files)
-        test = inputs.image_input_fn(filenames=test_record)
-        history = m.fit(x=train, epochs=20)
-        fit = m.predict(x=test)
+        train = inputs.image_input_fn(filenames=record_files, train=True)
+        test = inputs.image_input_fn(filenames=test_record, train=False)
+        history = m.fit(x=train, epochs=20, validation_data=test)
+        accuracy = history.history['val_acc'][-1]
+
+        # Print the classification accuracy.
+        print("Accuracy: {0:.2%}".format(accuracy))
+
+        # get the previous best
+        global best_accuracy
+
+        # If the classification accuracy of the saved model is improved ...
+        if accuracy > best_accuracy:
+            # Save the new model to disk
+            m.save(best_model)
+
+            # Update the classification accuracy.
+            best_accuracy = accuracy
+
+        # clear data from memory
+        del m
+        K.clear_session()
+
+        return -accuracy
+
+    search_result = skopt.gp_minimize(
+        func=fitness, dimensions=dimensions, acq_func='EI', n_calls=40
+    )
+    print(search_result.x)
