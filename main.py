@@ -1,9 +1,9 @@
 import argparse
+import os
 
 import numpy as np
-from tensorflow import keras
 
-import model
+import models
 
 def _cli():
     parser = generate_parser()
@@ -23,12 +23,13 @@ def generate_parser():
 
 
 def main(data):
-    params = {'input_shape': data.shape}
-    p = model.default_parameters()
-    p.update(params)
-    m = model.generate_variational_autoencoder(**p)
 
-    model.plot(m)
+    params = {'input_shape': data.shape}
+    p = models.parameters()
+    p.update(params)
+    m = models.generate_variational_autoencoder(**p)
+
+    models.plot(m)
 
 
 if __name__ == '__main__':

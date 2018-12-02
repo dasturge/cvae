@@ -1,13 +1,39 @@
+#!/usr/bin/env python3
 import argparse
 import os
 
-import tensorflow as tf
 import nibabel as nb
 import numpy as np
+import tensorflow as tf
 
 
 def _cli():
-    pass
+    parser = generate_parser()
+    args = parser.parse_args()
+
+    niftis = args.niftis
+    if args.list:
+        assert len(niftis) == 0, 'must provide filename through text file ' \
+                                 'or as space separated list. Not both.'
+        with open(args.list) as fd:
+            niftis = list(fd.readlines())
+
+    single_images_2_tfrecord(args.filename, niftis)
+
+
+def generate_parser():
+    parser = argparse.ArgumentParser(
+        description='command line interface packs mri images into tfrecord. '
+                    'The module also contains input functions for iterating '
+                    'through datasets generated with this cli.'
+    )
+    parser.add_argument('niftis', nargs='*',
+                        help='space separated list of nifti filenames.')
+    parser.add_argument('--list',
+                        help='text file with new line delimited files.')
+    parser.add_argument('--filename', default='niftis.tfrecord',
+                        help='path of tfrecord file to save out.')
+    return parser
 
 
 def single_images_2_tfrecord(record_name, simple_list):
@@ -72,6 +98,39 @@ def load_image(addr):
     img_data = img.get_fdata().astype(np.float32)
 
     return img_data
+
+
+def single_image_parser(serialized):
+
+    features = {'X': tf.FixedLenFeature([], tf.string)}
+    example = tf.parse_single_example(serialized=serialized,
+                                      features=features)
+    image_raw = example['X']
+    image = tf.decode_raw(image_raw, tf.float32)
+
+    return image
+
+
+def image_input_fn(filenames, train, batch_size=32, buffer_size=2048,
+                          shuffle=True):
+
+    dataset = tf.data.TFRecordDataset(filenames=filenames)
+    dataset.map(single_image_parser)
+    if train:
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=buffer_size)
+        num_repeat = None
+    else:
+        num_repeat = 1
+    dataset = dataset.repeat(num_repeat)
+    dataset = dataset.batch(batch_size)
+
+    iterator = dataset.make_one_shot_iterator()
+    image_batch = iterator.get_next()
+
+    x = {'X': image_batch}
+
+    return x
 
 
 if __name__ == '__main__':

@@ -77,7 +77,7 @@ def decoder(z, **params):
     ucc = keras.layers.Reshape((*params['prezshape'][1:-1], 1))(fc1)
 
     for i in range(params['layer_depth']):
-        upconvconv(ucc, **params)
+        ucc = upconvconv(ucc, **params)
 
     return ucc
 

@@ -5,9 +5,9 @@ from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 
 import inputs
-import model
+import models
 
-model_generator = model.generate_variational_autoencoder
+model_generator = models.generate_variational_autoencoder
 
 
 def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
@@ -21,14 +21,13 @@ def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
         'kernel_size': (kernel_size, kernel_size, kernel_size),
         'learning_rate': learning_rate
     }
-    params = model.parameters(**p)
-
+    params = models.parameters(**p)
     m = model_generator(**params)
 
     return m
 
 
-def hyperparameter_optimization():
+def hyperparameter_optimization(record_files, test_record):
 
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
     dim_layer_depth = Integer(1, 4, name='layer_depth')
@@ -71,4 +70,8 @@ def hyperparameter_optimization():
 
         # create logging and TensorBoard
 
-        history = m.fit()
+        # inputs
+        # here is where I could implement cross-validation
+        train = inputs.image_input_fn(filenames=record_files)
+        history = m.fit(x=train, epochs=20)
+
