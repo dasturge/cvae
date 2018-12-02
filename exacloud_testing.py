@@ -15,19 +15,18 @@ TMPDIR = '/mnt/scratch/darrick_cnn'
 
 def maybe_create_record():
     t1w_pattern = '/home/exacloud/lustre1/fnl_lab/data/HCP/sorted/ABCD' \
-                  '/sub-NDARINV*/ses-baselineYear1Arm1/anat/sub-' \
-                  'NDARINV*_ses-baselineYear1Arm1_T1w.nii.gz'
+                  '/sub-*/ses-*/anat/*T1w.nii.gz'
     filenames = glob.glob(t1w_pattern)
     size = len(filenames)
     print('size of dataset = %s' % size)
 
     # randomize
-    filenames = np.random.shuffle(filenames)
+    np.random.shuffle(filenames)
 
     train_filenames = filenames[:int(size * .9)]
     test_filenames = filenames[int(size * .9):]
 
-    os.makedirs(TMPDIR)
+    os.makedirs(TMPDIR, exist_ok=True)
     train_record = os.path.join(TMPDIR, 'train.tfrecord')
     test_record = os.path.join(TMPDIR, 'test.tfrecord')
     if not os.path.exists(train_record):
@@ -36,7 +35,7 @@ def maybe_create_record():
         inputs.single_images_2_tfrecord(train_record, train_filenames)
         inputs.single_images_2_tfrecord(test_record, test_filenames)
 
-    shutil.move(TMPDIR, PROJECT_ROOT)
+    #shutil.move(TMPDIR, PROJECT_ROOT)
 
     return train_record, test_record
 

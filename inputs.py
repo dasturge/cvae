@@ -43,7 +43,7 @@ def single_images_2_tfrecord(record_name, simple_list):
     :param simple_list: list of nifti paths
     :return:
     """
-    gen = single_image_data_generator(simple_list)
+    gen = single_image_data_generator('X', simple_list)
     write_tfrecord(record_name, gen)
 
 
@@ -58,30 +58,21 @@ def write_tfrecord(filename, feature_sets, clobber=True):
     if clobber and os.path.exists(filename):
         os.remove(filename)
 
-    writer = tf.io.TFRecordWriter(filename)
+    with tf.io.TFRecordWriter(filename) as writer:
+        for data_dict in feature_sets:
+            # @ TODO allow for writing labels
+            feature = {}
+            for name, data in data_dict.items():
+                # write numpy array into tf bytes feature
+                bytess = data.tobytes()
+                feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))
 
-    def write_to_record(data_dict):
-        """
-        writes numpy data arrays into tfrecord features.
-        :param data_dict: dict of numpy arrays and names
-        :return:
-        """
-        # @ TODO allow for writing labels
-        feature = {}
-        for name, data in data_dict:
-            # write numpy array into tf bytes feature
-            feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(data.tostring()))
+            # create protocol buffer from bytes feature.
+            example = tf.train.Example(features=tf.train.Features(feature=feature))
 
-        # create protocol buffer from bytes feature.
-        example = tf.train.Example(features=tf.train.Features(feature=feature))
-
-        # Serialize to string and write on the file
-        writer.write(example.SerializeToString())
-
-    for dct in feature_sets:
-        write_to_record(dct)
-
-    writer.close()
+            # Serialize to string and write on the file
+            serialized = example.SerializeToString()
+            writer.write(serialized)
 
 
 def _bytes_feature(value):
