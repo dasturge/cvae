@@ -73,5 +73,6 @@ def hyperparameter_optimization(record_files, test_record):
         # inputs
         # here is where I could implement cross-validation
         train = inputs.image_input_fn(filenames=record_files)
+        test = inputs.image_input_fn(filenames=test_record)
         history = m.fit(x=train, epochs=20)
-
+        fit = m.predict(x=test)
