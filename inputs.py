@@ -65,6 +65,9 @@ def write_tfrecord(filename, feature_sets, clobber=True):
             # @ TODO allow for writing labels
             feature = {}
             for name, data in data_dict.items():
+                if np.product(data.shape) != np.product((176, 256, 256)):
+                    print('image with bad dimensions...')
+                    continue
                 # write numpy array into tf bytes feature
                 bytess = data.tobytes()
                 feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))

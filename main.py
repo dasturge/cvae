@@ -29,6 +29,9 @@ def main(data):
     p.update(params)
     m = models.generate_variational_autoencoder(**p)
 
+    for layer in m.layers:
+        print('%s %s' %(layer.output.shape, np.product(layer.output.shape[1:])))
+
     models.plot(m)
 
 
