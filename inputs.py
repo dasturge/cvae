@@ -119,12 +119,16 @@ def image_input_fn(filenames, train, batch_size=32, buffer_size=2048,
     dataset = dataset.repeat(num_repeat)
     dataset = dataset.batch(batch_size)
 
+    # autoencoder has same input and validation
     iterator = dataset.make_one_shot_iterator()
+    iterator2 = dataset.make_one_shot_iterator()
     image_batch = iterator.get_next()
+    image_batch2 = iterator2.get_next()
 
     x = {'X': image_batch}
+    y = {'X': image_batch2}
 
-    return x
+    return x, y
 
 
 if __name__ == '__main__':

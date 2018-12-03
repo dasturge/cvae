@@ -6,11 +6,11 @@ import skopt
 from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 import tensorflow as tf
-K = tf.keras.backend
 
 import inputs
 import models
 
+K = tf.keras.backend
 model_generator = models.generate_variational_autoencoder
 
 
@@ -80,9 +80,9 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
 
         # inputs
         # here is where I could implement cross-validation
-        train = inputs.image_input_fn(filenames=record_files, train=True)
-        test = inputs.image_input_fn(filenames=test_record, train=False)
-        history = m.fit(x=train, epochs=20, validation_data=(test, None), 
+        train, train2 = inputs.image_input_fn(filenames=record_files, train=True)
+        test, test2 = inputs.image_input_fn(filenames=test_record, train=False)
+        history = m.fit(x=train, y=train2, epochs=20, validation_data=(test, test2),
                         steps_per_epoch=85)
         accuracy = history.history['val_acc'][-1]
 
