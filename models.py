@@ -84,7 +84,8 @@ def decoder(z, **params):
         filters=1,
         kernel_size=params['kernel_size'],
         activation='relu',
-        padding='same'
+        padding='same',
+        name='Xout'
     )(ucc)
 
     return out

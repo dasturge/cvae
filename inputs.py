@@ -126,7 +126,7 @@ def image_input_fn(filenames, train, batch_size=32, buffer_size=2048,
     image_batch2 = iterator2.get_next()
 
     x = {'X': image_batch}
-    y = {'X': image_batch2}
+    y = {'Xout': image_batch2}
 
     return x, y
 
