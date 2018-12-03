@@ -100,6 +100,7 @@ def single_image_parser(serialized):
                                       features=features)
     image_raw = example['X']
     image = tf.decode_raw(image_raw, tf.float32)
+    image = tf.reshape(image, (176, 256, 256, 1))
 
     return image
 
@@ -108,7 +109,7 @@ def image_input_fn(filenames, train, batch_size=32, buffer_size=2048,
                           shuffle=True):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
-    dataset.map(single_image_parser)
+    dataset = dataset.map(single_image_parser)
     if train:
         if shuffle:
             dataset = dataset.shuffle(buffer_size=buffer_size)

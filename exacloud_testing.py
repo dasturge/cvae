@@ -26,15 +26,17 @@ def maybe_create_record():
 
     train_filenames = filenames[:int(size * .9)]
     test_filenames = filenames[int(size * .9):]
-
-    os.makedirs(TMPDIR, exist_ok=True)
+    
     train_record = os.path.join(TMPDIR, 'train.tfrecord')
     test_record = os.path.join(TMPDIR, 'test.tfrecord')
     if not os.path.exists(os.path.join(PROJECT_ROOT, 'train.tfrecord')):
         # train/test split
+        os.makedirs(TMPDIR, exist_ok=True)
         inputs.single_images_2_tfrecord(train_record, train_filenames)
         inputs.single_images_2_tfrecord(test_record, test_filenames)
         shutil.move(TMPDIR, PROJECT_ROOT)
+    train_record = os.path.join(PROJECT_ROOT, 'train.tfrecord')
+    test_record = os.path.join(PROJECT_ROOT, 'test.tfrecord')
 
     return train_record, test_record
 
@@ -47,5 +49,9 @@ def run_hyperparameter_optimization(train_record, test_record, working_dir):
 if __name__ == '__main__':
     train_record, test_record = maybe_create_record()
     wd = '/mnt/scratch/darrick_cnn'
-    os.makedirs(wd, exist_ok=True)
-    run_hyperparameter_optimization(train_record, test_record, working_dir=wd)
+    try:
+        os.makedirs(wd, exist_ok=True)
+    except PermissionError:
+        wd = PROJECT_ROOT
+    run_hyperparameter_optimization([train_record], [test_record], working_dir=wd)
+

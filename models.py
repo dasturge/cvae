@@ -13,7 +13,8 @@ def parameters(*arams, **params):
         'n_latent': 256,
         'layer_depth': 2,
         'kernel_size': (3, 3, 3),
-        'learning_rate': 1e-3
+        'learning_rate': 1e-3,
+        'input_shape': [176, 256, 256, 1]
     }
     p.update(params)
 
@@ -84,7 +85,7 @@ def decoder(z, **params):
 
 def generate_variational_autoencoder(**params):
 
-    X = keras.layers.Input(shape=params['input_shape'])
+    X = keras.layers.Input(shape=params['input_shape'], name='X')
 
     z, mean, var, conv4 = encoder(X, **params)
 
