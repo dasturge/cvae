@@ -80,7 +80,14 @@ def decoder(z, **params):
     for i in range(params['layer_depth']):
         ucc = upconvconv(ucc, **params)
 
-    return ucc
+    out = keras.layers.Conv3D(
+        filters=1,
+        kernel_size=params['kernel_size'],
+        activation='relu',
+        padding='same'
+    )(ucc)
+
+    return out
 
 
 def generate_variational_autoencoder(**params):
