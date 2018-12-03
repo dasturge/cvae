@@ -10,7 +10,7 @@ def _cli():
     args = parser.parse_args()
 
     if args.mock:
-        args.data = np.random.randn(100, 100, 100, 1)
+        args.data = np.random.randn(176, 256, 256, 1)
     return main(args.data)
 
 

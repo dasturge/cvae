@@ -114,17 +114,21 @@ def upconvconv(input_layer, **params):
 
     upconv1 = keras.layers.Conv3DTranspose(
         filters=params['deconv1_filters'],
-        kernel_size=params['kernel_size']
+        kernel_size=params['kernel_size'],
+        strides=2,
+        padding='same'
     )(input_layer)
     conv1 = keras.layers.Conv3D(
         filters=params['conv1_filters'],
         kernel_size=params['kernel_size'],
-        activation='relu'
+        activation='relu',
+        padding='same'
     )(upconv1)
     conv2 = keras.layers.Conv3D(
         filters=params['conv2_filters'],
         kernel_size=params['kernel_size'],
-        activation='relu'
+        activation='relu',
+        padding='same'
     )(conv1)
 
     return conv2
@@ -135,12 +139,14 @@ def convconvpool(input_layer, **params):
     conv1 = keras.layers.Conv3D(
         filters=params['conv1_filters'],
         kernel_size=params['kernel_size'],
-        activation='relu'
+        activation='relu',
+        padding='same'
     )(input_layer)
     conv2 = keras.layers.Conv3D(
         filters=params['conv2_filters'],
         kernel_size=params['kernel_size'],
-        activation='relu'
+        activation='relu',
+        padding='same'
     )(conv1)
     maxpool1 = keras.layers.MaxPool3D(strides=2)(conv2)
 
