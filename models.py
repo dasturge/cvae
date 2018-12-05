@@ -14,7 +14,7 @@ def parameters(*arams, **params):
         'layer_depth': 2,
         'kernel_size': (3, 3, 3),
         'learning_rate': 1e-3,
-        'input_shape': [176, 256, 256, 1]
+        'input_shape': [88, 128, 128, 1]
     }
     p.update(params)
 

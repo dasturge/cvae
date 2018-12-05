@@ -6,6 +6,8 @@ import nibabel as nb
 import numpy as np
 import tensorflow as tf
 
+import scipy.ndimage
+
 
 def _cli():
     parser = generate_parser()
@@ -66,8 +68,10 @@ def write_tfrecord(filename, feature_sets, clobber=True):
             feature = {}
             for name, data in data_dict.items():
                 if np.product(data.shape) != np.product((176, 256, 256)):
+                    print(data.shape)
+                    data = data[:176, :, :]
                     print('image with bad dimensions...')
-                    continue
+                data = scipy.ndimage.zoom(data, .5, order=3)
                 # write numpy array into tf bytes feature
                 bytess = data.tobytes()
                 feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))
@@ -103,16 +107,17 @@ def single_image_parser(serialized):
                                       features=features)
     image_raw = example['X']
     image = tf.decode_raw(image_raw, tf.float32)
-    image = tf.reshape(image, (176, 256, 256, 1))
+    image = tf.reshape(image, (88, 128, 128, 1))
 
     return image
 
 
-def image_input_fn(filenames, train, batch_size=32, buffer_size=2048,
-                          shuffle=True):
+def image_input_fn(filenames, train, batch_size=1, buffer_size=256,
+                          shuffle=False):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)
+    dataset = dataset.filter(lambda x: x.shape == (88, 128, 128, 1))
     if train:
         if shuffle:
             dataset = dataset.shuffle(buffer_size=buffer_size)
