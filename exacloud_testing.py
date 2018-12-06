@@ -2,6 +2,7 @@
 import os
 import glob
 import shutil
+import sys
 
 import numpy as np
 
@@ -48,11 +49,11 @@ def run_hyperparameter_optimization(train_record, test_record, working_dir):
 
 if __name__ == '__main__':
     train_record, test_record = maybe_create_record()
-    wd = '/mnt/scratch/darrick_cnn'
+    wd = '/' # don't do any /mnt/scratch
     try:
         os.makedirs(wd, exist_ok=True)
     except PermissionError:
-        wd = os.path.join(PROJECT_ROOT, 'gpu')
+        wd = os.path.join(PROJECT_ROOT, sys.argv[0])
         os.makedirs(wd, exist_ok=True)
     run_hyperparameter_optimization([train_record], [test_record], working_dir=wd)
 

@@ -11,10 +11,10 @@ def parameters(*arams, **params):
         'conv2_filters': 32,
         'deconv1_filters': 32,
         'n_latent': 256,
-        'layer_depth': 2,
+        'layer_depth': 3,
         'kernel_size': (3, 3, 3),
         'learning_rate': 1e-3,
-        'input_shape': [88, 128, 128, 1]
+        'input_shape': [96, 128, 128, 1]
     }
     p.update(params)
 
@@ -94,7 +94,7 @@ def decoder(z, **params):
 def generate_variational_autoencoder(**params):
 
     X = keras.layers.Input(shape=params['input_shape'], name='X')
-
+    
     z, mean, var, conv4 = encoder(X, **params)
 
     # get final image layer size
@@ -108,7 +108,8 @@ def generate_variational_autoencoder(**params):
     vae = keras.Model(X, y)
 
     def vae_loss(x, x_decoded_mean):
-        xent_loss = np.product(params['input_shape']) * keras.losses.binary_crossentropy(x, x_decoded_mean)
+        xent_loss = np.product(params['input_shape']) * keras.losses.\
+                binary_crossentropy(x, x_decoded_mean)
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
         return xent_loss + kl_loss
 

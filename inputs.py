@@ -108,16 +108,20 @@ def single_image_parser(serialized):
     image_raw = example['X']
     image = tf.decode_raw(image_raw, tf.float32)
     image = tf.reshape(image, (88, 128, 128, 1))
+    m = tf.math.reduce_min(image)
+    image = (image - m) / (tf.math.reduce_max(image) - m)
+    paddings = tf.constant([[4, 4], [0, 0], [0, 0], [0, 0]])
+    image = tf.pad(image, paddings)
 
     return image
 
 
-def image_input_fn(filenames, train, batch_size=1, buffer_size=256,
+def image_input_fn(filenames, train, batch_size=4, buffer_size=256,
                           shuffle=False):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)
-    dataset = dataset.filter(lambda x: x.shape == (88, 128, 128, 1))
+    dataset = dataset.filter(lambda x: x.shape == (96, 128, 128, 1))
     if train:
         if shuffle:
             dataset = dataset.shuffle(buffer_size=buffer_size)

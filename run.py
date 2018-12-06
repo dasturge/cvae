@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import traceback
 
 import sklearn
 import skopt
@@ -36,10 +37,10 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
 
     best_accuracy = 0.0
     best_model = os.path.join(working_dir, 'best_model.keras')
-    default_params = (1e-3, 3, 32, 64, 64, 256, 3)
+    default_params = (1e-2, 3, 32, 32, 32, 256, 3)
 
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
-    dim_layer_depth = Integer(2, 5, name='layer_depth')
+    dim_layer_depth = Integer(3, 4, name='layer_depth')
     dim_n_filters = Integer(2, 32, name='n_filters')
     dim_n_filters_2 = Integer(2, 128, name='n_filters_2')
     dim_n_deconv_filters = Integer(2, 128, name='n_deconv_filters')
@@ -83,15 +84,19 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
                   f'_f_{n_filters}_2f_{n_filters_2}_df_{n_deconv_filters}' \
                   f'_lat_{n_latent}_k_{kernel_size}/'
         callback_log = TensorBoard(
-                log_dir=dirname, histogram_freq=0, batch_size=1,
+                log_dir=dirname, histogram_freq=0, batch_size=4,
                 write_graph=True, write_grads=False, write_images=False)
 
         # inputs
         # here is where I could implement cross-validation
         train, train2 = inputs.image_input_fn(filenames=record_files, train=True)
         test, test2 = inputs.image_input_fn(filenames=test_record, train=False)
-        history = m.fit(x=train, y=train2, epochs=10, validation_data=(test, test2),
-                        steps_per_epoch=int(3008*.9), callbacks=[callback_log])
+        try:
+            history = m.fit(x=train, y=train2, epochs=5, validation_data=(test, test2),
+                            steps_per_epoch=int(3008*.9/4), callbacks=[callback_log])
+        except Exception as e:
+            traceback.print_exc()
+            return 0.0
         accuracy = history.history['val_acc'][-1]
 
         # Print the classification accuracy.
