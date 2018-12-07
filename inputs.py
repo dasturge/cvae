@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import re
 
 import nibabel as nb
 import numpy as np
 import tensorflow as tf
 
 import scipy.ndimage
+
+scanner_name = re.compile('ABCD_(.*)_SEFMNoT2')
 
 
 def _cli():
@@ -59,6 +62,9 @@ def write_tfrecord(filename, feature_sets, clobber=True):
     :param clobber: overwrite existing tfrecord.
     :return:
     """
+
+    label_dict = {'GE': 0, 'PHILIPS': 1, 'SIEMENS': 2}
+
     if clobber and os.path.exists(filename):
         os.remove(filename)
 
@@ -67,14 +73,16 @@ def write_tfrecord(filename, feature_sets, clobber=True):
             # @ TODO allow for writing labels
             feature = {}
             for name, data in data_dict.items():
-                if np.product(data.shape) != np.product((176, 256, 256)):
-                    print(data.shape)
-                    data = data[:176, :, :]
-                    print('image with bad dimensions...')
-                data = scipy.ndimage.zoom(data, .5, order=3)
-                # write numpy array into tf bytes feature
-                bytess = data.tobytes()
-                feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))
+                if isinstance(data, np.ndarray):
+                    data = data[85, :, :]  # pick a z-slice
+                    # write numpy array into tf bytes feature
+                    bytess = data.tobytes()
+                    feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))
+                elif isinstance(data, str):
+                    code = label_dict[data]
+                    one_hot = tf.one_hot(code, 3)
+                    feature[f'{name}'] = _int64_feature(one_hot)
+
 
             # create protocol buffer from bytes feature.
             example = tf.train.Example(features=tf.train.Features(feature=feature))
@@ -85,12 +93,16 @@ def write_tfrecord(filename, feature_sets, clobber=True):
 
 
 def _bytes_feature(value):
-  return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
 
 def single_image_data_generator(name, files):
     for f in files:
-        yield {name: load_image(f)}
+        yield {name: load_image(f), 'y': scanner_name.match(f).group(0)}
 
 
 def load_image(addr):
@@ -102,7 +114,8 @@ def load_image(addr):
 
 def single_image_parser(serialized):
 
-    features = {'X': tf.FixedLenFeature([], tf.string)}
+    features = {'X': tf.FixedLenFeature([], tf.string),
+                'y': tf.FixedLenFeature([], tf.int64)}
     example = tf.parse_single_example(serialized=serialized,
                                       features=features)
     image_raw = example['X']
@@ -113,7 +126,9 @@ def single_image_parser(serialized):
     paddings = tf.constant([[4, 4], [0, 0], [0, 0], [0, 0]])
     image = tf.pad(image, paddings)
 
-    return image
+    one_hot = example['y']
+
+    return image, one_hot
 
 
 def image_input_fn(filenames, train, batch_size=1, buffer_size=512,
@@ -121,7 +136,6 @@ def image_input_fn(filenames, train, batch_size=1, buffer_size=512,
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)
-    dataset = dataset.filter(lambda x: x.shape == (96, 128, 128, 1))
     if train:
         if shuffle:
             dataset = dataset.shuffle(buffer_size=buffer_size)
@@ -134,11 +148,11 @@ def image_input_fn(filenames, train, batch_size=1, buffer_size=512,
     # autoencoder has same input and validation
     iterator = dataset.make_one_shot_iterator()
     iterator2 = dataset.make_one_shot_iterator()
-    image_batch = iterator.get_next()
-    image_batch2 = iterator2.get_next()
+    image_batch, label_batch = iterator.get_next()
+    image_batch2, label_batch2 = iterator2.get_next()
 
-    x = {'X': image_batch}
-    y = {'Xout': image_batch2}
+    x = {'X': image_batch, 'y': label_batch}
+    y = {'Xout': image_batch2, 'yout': label_batch2}
 
     return x, y
 

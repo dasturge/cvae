@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
+# standard lib
 import os
 import traceback
 
-import sklearn
+# external libs
 import skopt
 from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 import tensorflow as tf
 
+# internal
 import inputs
 import models
 
+# define some shorthands
 K = tf.keras.backend
 TensorBoard = tf.keras.callbacks.TensorBoard
 model_generator = models.generate_variational_autoencoder
@@ -40,8 +43,8 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
     default_params = (1e-2, 3, 32, 32, 32, 256, 3)
 
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
-    dim_layer_depth = Integer(3, 4, name='layer_depth')
-    dim_n_filters = Integer(2, 32, name='n_filters')
+    dim_layer_depth = Integer(2, 5, name='layer_depth')
+    dim_n_filters = Integer(2, 64, name='n_filters')
     dim_n_filters_2 = Integer(2, 128, name='n_filters_2')
     dim_n_deconv_filters = Integer(2, 128, name='n_deconv_filters')
     dim_n_latent = Integer(2, 512, name='n_latent')
@@ -91,8 +94,8 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
         # here is where I could implement cross-validation
         train, train2 = inputs.image_input_fn(filenames=record_files, train=True)
         test, test2 = inputs.image_input_fn(filenames=test_record, train=False)
-        history = m.fit(x=train, y=train2, epochs=5, validation_data=(test, test2),
-                        batch_size=4, steps_per_epoch=int(3008*.9/4), callbacks=[callback_log])
+        history = m.fit(x=train, y=train2, epochs=20, validation_data=(test, test2),
+                        batch_size=32, steps_per_epoch=int(3008*.9/4), callbacks=[callback_log])
         accuracy = history.history['val_acc'][-1]
 
         # Print the classification accuracy.

@@ -42,14 +42,39 @@ def maybe_create_record():
     return train_record, test_record
 
 
+def maybe_create_2D_record():
+    t1w_pattern = '/home/groups/brainmri/abcd/data/HCP/processed/' \
+                  'ABCD_*_SEFMNoT2/sub-*/ses-baselineYear1Arm1/' \
+                  'HCP_release_20170910_v1.1/sub-*/T1w/' \
+                  'T1w_acpc_dc_restore_brain.nii.gz'
+    filenames = glob.glob(t1w_pattern)
+    size = len(filenames)
+    print('size of dataset = %s' % size)
+    # randomize
+    np.random.shuffle(filenames)
+    train_filenames = filenames[:int(size * .9)]
+    test_filenames = filenames[int(size * .9):]
+    train_record = os.path.join(TMPDIR, 'train.tfrecord')
+    test_record = os.path.join(TMPDIR, 'test.tfrecord')
+    if not os.path.exists(os.path.join(PROJECT_ROOT, 'train.tfrecord')):
+        # train/test split
+        os.makedirs(TMPDIR, exist_ok=True)
+        inputs.single_images_2_tfrecord(train_record, train_filenames)
+        inputs.single_images_2_tfrecord(test_record, test_filenames)
+        shutil.move(TMPDIR, PROJECT_ROOT)
+    train_record = os.path.join(PROJECT_ROOT, 'train.tfrecord')
+    test_record = os.path.join(PROJECT_ROOT, 'test.tfrecord')
+    return train_record, test_record
+
+
 def run_hyperparameter_optimization(train_record, test_record, working_dir):
     # this may require no real prep
     run.hyperparameter_optimization(train_record, test_record, working_dir=working_dir)
 
 
 if __name__ == '__main__':
-    train_record, test_record = maybe_create_record()
-    wd = '/' # don't do any /mnt/scratch
+    train_record, test_record = maybe_create_2D_record()
+    wd = '/'  # don't do any /mnt/scratch
     try:
         os.makedirs(wd, exist_ok=True)
     except PermissionError:

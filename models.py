@@ -14,7 +14,7 @@ def parameters(*arams, **params):
         'layer_depth': 3,
         'kernel_size': (3, 3, 3),
         'learning_rate': 1e-3,
-        'input_shape': [96, 128, 128, 1]
+        'input_shape': [181, 217, 1]
     }
     p.update(params)
 
@@ -58,7 +58,7 @@ def encoder(X, **params):
         units=params['n_latent']
     )(flat)
 
-    z  = keras.layers.Lambda(
+    z = keras.layers.Lambda(
         sampling,
         output_shape=(params['n_latent'],),
         name='z'
@@ -80,7 +80,7 @@ def decoder(z, **params):
     for i in range(params['layer_depth']):
         ucc = upconvconv(ucc, **params)
 
-    out = keras.layers.Conv3D(
+    out = keras.layers.Conv2D(
         filters=1,
         kernel_size=params['kernel_size'],
         activation='relu',
@@ -122,19 +122,19 @@ def generate_variational_autoencoder(**params):
 
 def upconvconv(input_layer, **params):
 
-    upconv1 = keras.layers.Conv3DTranspose(
+    upconv1 = keras.layers.Conv2DTranspose(
         filters=params['deconv1_filters'],
         kernel_size=params['kernel_size'],
         strides=2,
         padding='same'
     )(input_layer)
-    conv1 = keras.layers.Conv3D(
+    conv1 = keras.layers.Conv2D(
         filters=params['conv1_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
         padding='same'
     )(upconv1)
-    conv2 = keras.layers.Conv3D(
+    conv2 = keras.layers.Conv2D(
         filters=params['conv2_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
@@ -146,13 +146,13 @@ def upconvconv(input_layer, **params):
 
 def convconvpool(input_layer, **params):
 
-    conv1 = keras.layers.Conv3D(
+    conv1 = keras.layers.Conv2D(
         filters=params['conv1_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
         padding='same'
     )(input_layer)
-    conv2 = keras.layers.Conv3D(
+    conv2 = keras.layers.Conv2D(
         filters=params['conv2_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',

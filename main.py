@@ -5,6 +5,7 @@ import numpy as np
 
 import models
 
+
 def _cli():
     parser = generate_parser()
     args = parser.parse_args()
