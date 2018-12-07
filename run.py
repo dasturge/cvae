@@ -91,12 +91,8 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
         # here is where I could implement cross-validation
         train, train2 = inputs.image_input_fn(filenames=record_files, train=True)
         test, test2 = inputs.image_input_fn(filenames=test_record, train=False)
-        try:
-            history = m.fit(x=train, y=train2, epochs=5, validation_data=(test, test2),
-                            steps_per_epoch=int(3008*.9/4), callbacks=[callback_log])
-        except Exception as e:
-            traceback.print_exc()
-            return 0.0
+        history = m.fit(x=train, y=train2, epochs=5, validation_data=(test, test2),
+                        batch_size=4, steps_per_epoch=int(3008*.9/4), callbacks=[callback_log])
         accuracy = history.history['val_acc'][-1]
 
         # Print the classification accuracy.

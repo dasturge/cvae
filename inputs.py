@@ -116,7 +116,7 @@ def single_image_parser(serialized):
     return image
 
 
-def image_input_fn(filenames, train, batch_size=4, buffer_size=256,
+def image_input_fn(filenames, train, batch_size=1, buffer_size=512,
                           shuffle=False):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)

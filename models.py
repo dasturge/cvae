@@ -111,7 +111,7 @@ def generate_variational_autoencoder(**params):
         xent_loss = np.product(params['input_shape']) * keras.losses.\
                 binary_crossentropy(x, x_decoded_mean)
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
-        return xent_loss + kl_loss
+        return K.mean(xent_loss + kl_loss)
 
     optimizer = keras.optimizers.Adam(lr=params['learning_rate'])
 
