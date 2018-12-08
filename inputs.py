@@ -146,7 +146,7 @@ def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
             dataset = dataset.shuffle(buffer_size=buffer_size)
         num_repeat = None
     else:
-        num_repeat = 1
+        num_repeat = None
     dataset = dataset.repeat(num_repeat)
     dataset = dataset.batch(batch_size)
 

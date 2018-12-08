@@ -70,9 +70,16 @@ def encoder(X, **params):
 
 def decoder(z, **params):
 
+    kwargs = {}
+    if params.get('regularizer') == 'l2':
+        kwargs['activity_regularizer'] = keras.regularizers.l2(0.1)
+    elif params.get('regularizer') == 'l1':
+        kwargs['activity_regularizer'] = keras.regularizers.l1(0.1)
+
     fc1 = keras.layers.Dense(
         units=params['prezsize'],
-        activation='relu'  # don't know if I need activation here...
+        activation='relu',  # don't know if I need activation here...
+        **kwargs
     )(z)
 
     ucc = keras.layers.Reshape((*params['prezshape'][1:-1], 1))(fc1)
@@ -123,23 +130,32 @@ def generate_variational_autoencoder(**params):
 
 def upconvconv(input_layer, **params):
 
+    kwargs = {}
+    if params.get('regularizer') == 'l2':
+        kwargs['activity_regularizer'] = keras.regularizers.l2(0.1)
+    elif params.get('regularizer') == 'l1':
+        kwargs['activity_regularizer'] = keras.regularizers.l1(0.1)
+
     upconv1 = keras.layers.Conv2DTranspose(
         filters=params['deconv1_filters'],
         kernel_size=params['kernel_size'],
         strides=2,
-        padding='same'
+        padding='same',
+        **kwargs
     )(input_layer)
     conv1 = keras.layers.Conv2D(
         filters=params['conv1_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
-        padding='same'
+        padding='same',
+        **kwargs
     )(upconv1)
     conv2 = keras.layers.Conv2D(
         filters=params['conv2_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
-        padding='same'
+        padding='same',
+        **kwargs
     )(conv1)
 
     return conv2
@@ -147,17 +163,25 @@ def upconvconv(input_layer, **params):
 
 def convconvpool(input_layer, **params):
 
+    kwargs = {}
+    if params.get('regularizer') == 'l2':
+        kwargs['activity_regularizer'] = keras.regularizers.l2(0.1)
+    elif params.get('regularizer') == 'l1':
+        kwargs['activity_regularizer'] = keras.regularizers.l1(0.1)
+
     conv1 = keras.layers.Conv2D(
         filters=params['conv1_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
-        padding='same'
+        padding='same',
+        **kwargs
     )(input_layer)
     conv2 = keras.layers.Conv2D(
         filters=params['conv2_filters'],
         kernel_size=params['kernel_size'],
         activation='relu',
-        padding='same'
+        padding='same',
+        **kwargs
     )(conv1)
     maxpool1 = keras.layers.MaxPool2D(strides=2)(conv2)
 

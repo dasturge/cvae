@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # standard lib
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import traceback
 
 # external libs
@@ -20,7 +21,7 @@ model_generator = models.generate_variational_autoencoder
 
 
 def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
-                 n_deconv_filters, n_latent, kernel_size):
+                 n_deconv_filters, n_latent, kernel_size, regularizer):
     p = {
         'conv1_filters': n_filters,
         'conv2_filters': n_filters_2,
@@ -28,7 +29,8 @@ def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
         'n_latent': n_latent,
         'layer_depth': layer_depth,
         'kernel_size': (kernel_size, kernel_size),
-        'learning_rate': learning_rate
+        'learning_rate': learning_rate,
+        'regularizer': regularizer
     }
     params = models.parameters(**p)
     m = model_generator(**params)
