@@ -113,20 +113,20 @@ def generate_variational_autoencoder(**params):
     params['prezsize'] = np.product(params['prezshape'][1:-1])
     del tmpmodel
 
-    y  = decoder(z, **params)
+    y = decoder(z, **params)
 
     vae = keras.Model(X, y)
 
-    def vae_loss(x, x_decoded_mean):
-        xent_loss = np.product(params['input_shape']) * keras.losses.\
-                binary_crossentropy(x, x_decoded_mean)
-        xent_loss = K.mean(xent_loss)
+    def loss(x, x_decoded_mean):
+        rec_loss = np.product(params['input_shape']) * keras.losses.\
+                mean_squared_error(x, x_decoded_mean)
+        rec_loss = K.mean(rec_loss)
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
-        return xent_loss + kl_loss
+        return rec_loss + kl_loss
 
     optimizer = keras.optimizers.Adam(lr=params['learning_rate'])
 
-    vae.compile(optimizer=optimizer, loss=vae_loss, metrics=['mse'])
+    vae.compile(optimizer=optimizer, loss=loss, metrics=['mse'])
 
     return vae
 
