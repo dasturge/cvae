@@ -12,7 +12,7 @@ def parameters(*arams, **params):
         'deconv1_filters': 32,
         'n_latent': 256,
         'layer_depth': 3,
-        'kernel_size': (3, 3, 3),
+        'kernel_size': (3, 3),
         'learning_rate': 1e-3,
         'input_shape': [181, 217, 1]
     }
@@ -158,7 +158,7 @@ def convconvpool(input_layer, **params):
         activation='relu',
         padding='same'
     )(conv1)
-    maxpool1 = keras.layers.MaxPool3D(strides=2)(conv2)
+    maxpool1 = keras.layers.MaxPool2D(strides=2)(conv2)
 
     return maxpool1
 

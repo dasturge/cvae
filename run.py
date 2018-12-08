@@ -27,7 +27,7 @@ def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
         'deconv1_filters': n_deconv_filters,
         'n_latent': n_latent,
         'layer_depth': layer_depth,
-        'kernel_size': (kernel_size, kernel_size, kernel_size),
+        'kernel_size': (kernel_size, kernel_size),
         'learning_rate': learning_rate
     }
     params = models.parameters(**p)
@@ -87,7 +87,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
                   f'_f_{n_filters}_2f_{n_filters_2}_df_{n_deconv_filters}' \
                   f'_lat_{n_latent}_k_{kernel_size}/'
         callback_log = TensorBoard(
-                log_dir=dirname, histogram_freq=0, batch_size=4,
+                log_dir=dirname, histogram_freq=0, batch_size=8,
                 write_graph=True, write_grads=False, write_images=False)
 
         # inputs
@@ -95,7 +95,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
         train, train2 = inputs.image_input_fn(filenames=record_files, train=True)
         test, test2 = inputs.image_input_fn(filenames=test_record, train=False)
         history = m.fit(x=train, y=train2, epochs=20, validation_data=(test, test2),
-                        batch_size=32, steps_per_epoch=int(3008*.9/4), callbacks=[callback_log])
+                        steps_per_epoch=int(2445*.9/8), callbacks=[callback_log])
         accuracy = history.history['val_acc'][-1]
 
         # Print the classification accuracy.

@@ -9,7 +9,7 @@ import tensorflow as tf
 
 import scipy.ndimage
 
-scanner_name = re.compile('ABCD_(.*)_SEFMNoT2')
+scanner_name = re.compile('.*/ABCD_(.*)_SEFMNoT2/.*')
 
 
 def _cli():
@@ -80,7 +80,8 @@ def write_tfrecord(filename, feature_sets, clobber=True):
                     feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))
                 elif isinstance(data, str):
                     code = label_dict[data]
-                    one_hot = tf.one_hot(code, 3)
+                    one_hot = [0, 0, 0]
+                    one_hot[code] = 1
                     feature[f'{name}'] = _int64_feature(one_hot)
 
 
@@ -102,8 +103,11 @@ def _int64_feature(value):
 
 def single_image_data_generator(name, files):
     for f in files:
-        yield {name: load_image(f), 'y': scanner_name.match(f).group(0)}
-
+        try:
+            dat = {name: load_image(f), 'y': scanner_name.match(f).group(1)}
+        except EOFError:
+            continue
+        yield dat
 
 def load_image(addr):
     img = nb.load(addr)
@@ -114,25 +118,23 @@ def load_image(addr):
 
 def single_image_parser(serialized):
 
-    features = {'X': tf.FixedLenFeature([], tf.string),
-                'y': tf.FixedLenFeature([], tf.int64)}
+    features = {'X': tf.FixedLenFeature([], tf.string)}
+               # 'y': tf.FixedLenFeature([], tf.int64)}
     example = tf.parse_single_example(serialized=serialized,
                                       features=features)
     image_raw = example['X']
     image = tf.decode_raw(image_raw, tf.float32)
-    image = tf.reshape(image, (88, 128, 128, 1))
+    image = tf.reshape(image, (181, 217, 1))
     m = tf.math.reduce_min(image)
     image = (image - m) / (tf.math.reduce_max(image) - m)
-    paddings = tf.constant([[4, 4], [0, 0], [0, 0], [0, 0]])
-    image = tf.pad(image, paddings)
 
-    one_hot = example['y']
+    # one_hot = example['y']
 
-    return image, one_hot
+    return image #, one_hot
 
 
-def image_input_fn(filenames, train, batch_size=1, buffer_size=512,
-                          shuffle=False):
+def image_input_fn(filenames, train, batch_size=8, buffer_size=512,
+                   shuffle=False, labels=False):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)
@@ -148,11 +150,15 @@ def image_input_fn(filenames, train, batch_size=1, buffer_size=512,
     # autoencoder has same input and validation
     iterator = dataset.make_one_shot_iterator()
     iterator2 = dataset.make_one_shot_iterator()
-    image_batch, label_batch = iterator.get_next()
-    image_batch2, label_batch2 = iterator2.get_next()
+    image_batch = iterator.get_next()
+    image_batch2 = iterator2.get_next()
 
-    x = {'X': image_batch, 'y': label_batch}
-    y = {'Xout': image_batch2, 'yout': label_batch2}
+    if labels:
+        x = {'X': image_batch, 'y': label_batch}
+        y = {'Xout': image_batch2, 'yout': label_batch2}
+    else:
+        x = {'X': image_batch}
+        y = {'Xout': image_batch2}
 
     return x, y
 

@@ -78,7 +78,7 @@ if __name__ == '__main__':
     try:
         os.makedirs(wd, exist_ok=True)
     except PermissionError:
-        wd = os.path.join(PROJECT_ROOT, sys.argv[0])
+        wd = os.path.join(PROJECT_ROOT, sys.argv[1])
         os.makedirs(wd, exist_ok=True)
     run_hyperparameter_optimization([train_record], [test_record], working_dir=wd)
 
