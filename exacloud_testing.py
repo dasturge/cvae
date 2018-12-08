@@ -48,6 +48,7 @@ def maybe_create_2D_record():
                   'HCP_release_20170910_v1.1/sub-*/T1w/' \
                   'T1w_acpc_dc_restore_brain.nii.gz'
     filenames = glob.glob(t1w_pattern)
+    assert len(filenames)
     size = len(filenames)
     print('size of dataset = %s' % size)
     # randomize
@@ -73,8 +74,10 @@ def run_hyperparameter_optimization(train_record, test_record, working_dir):
 
 
 if __name__ == '__main__':
-    train_record, test_record = maybe_create_2D_record()
-    wd = '/'  # don't do any /mnt/scratch
+    # train_record, test_record = maybe_create_2D_record()
+    wd = '/home/euler/PycharmProjects/cvae/model'  # don't do any /mnt/scratch
+    train_record = os.path.join(wd, 'train.tfrecord')
+    test_record = os.path.join(wd, 'test.tfrecord')
     try:
         os.makedirs(wd, exist_ok=True)
     except PermissionError:

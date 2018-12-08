@@ -84,7 +84,6 @@ def write_tfrecord(filename, feature_sets, clobber=True):
                     one_hot[code] = 1
                     feature[f'{name}'] = _int64_feature(one_hot)
 
-
             # create protocol buffer from bytes feature.
             example = tf.train.Example(features=tf.train.Features(feature=feature))
 
@@ -109,6 +108,7 @@ def single_image_data_generator(name, files):
             continue
         yield dat
 
+
 def load_image(addr):
     img = nb.load(addr)
     img_data = img.get_fdata().astype(np.float32)
@@ -119,22 +119,25 @@ def load_image(addr):
 def single_image_parser(serialized):
 
     features = {'X': tf.FixedLenFeature([], tf.string)}
-               # 'y': tf.FixedLenFeature([], tf.int64)}
+                #'y': tf.FixedLenFeature([], tf.int64)}
     example = tf.parse_single_example(serialized=serialized,
                                       features=features)
     image_raw = example['X']
     image = tf.decode_raw(image_raw, tf.float32)
-    image = tf.reshape(image, (181, 217, 1))
+    image = tf.reshape(image, (182, 218, 1))
     m = tf.math.reduce_min(image)
     image = (image - m) / (tf.math.reduce_max(image) - m)
+    padding = tf.constant([[5, 5], [3, 3], [0, 0]])  # makes numbers divisible by 16
+    image = tf.pad(image, padding)
+
 
     # one_hot = example['y']
 
     return image #, one_hot
 
 
-def image_input_fn(filenames, train, batch_size=8, buffer_size=512,
-                   shuffle=False, labels=False):
+def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
+                   shuffle=True, labels=False):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)

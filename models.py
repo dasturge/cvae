@@ -14,7 +14,7 @@ def parameters(*arams, **params):
         'layer_depth': 3,
         'kernel_size': (3, 3),
         'learning_rate': 1e-3,
-        'input_shape': [181, 217, 1]
+        'input_shape': [192, 224, 1]
     }
     p.update(params)
 
@@ -110,8 +110,9 @@ def generate_variational_autoencoder(**params):
     def vae_loss(x, x_decoded_mean):
         xent_loss = np.product(params['input_shape']) * keras.losses.\
                 binary_crossentropy(x, x_decoded_mean)
+        xent_loss = K.mean(xent_loss)
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
-        return K.mean(xent_loss + kl_loss)
+        return xent_loss + kl_loss
 
     optimizer = keras.optimizers.Adam(lr=params['learning_rate'])
 

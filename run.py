@@ -43,7 +43,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
     default_params = (1e-2, 3, 32, 32, 32, 256, 3)
 
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
-    dim_layer_depth = Integer(2, 5, name='layer_depth')
+    dim_layer_depth = Integer(2, 4, name='layer_depth')
     dim_n_filters = Integer(2, 64, name='n_filters')
     dim_n_filters_2 = Integer(2, 128, name='n_filters_2')
     dim_n_deconv_filters = Integer(2, 128, name='n_deconv_filters')
@@ -87,15 +87,16 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
                   f'_f_{n_filters}_2f_{n_filters_2}_df_{n_deconv_filters}' \
                   f'_lat_{n_latent}_k_{kernel_size}/'
         callback_log = TensorBoard(
-                log_dir=dirname, histogram_freq=0, batch_size=8,
+                log_dir=dirname, histogram_freq=0, batch_size=1,
                 write_graph=True, write_grads=False, write_images=False)
 
         # inputs
         # here is where I could implement cross-validation
         train, train2 = inputs.image_input_fn(filenames=record_files, train=True)
         test, test2 = inputs.image_input_fn(filenames=test_record, train=False)
-        history = m.fit(x=train, y=train2, epochs=20, validation_data=(test, test2),
-                        steps_per_epoch=int(2445*.9/8), callbacks=[callback_log])
+        history = m.fit(x=train, y=train2, epochs=10, validation_data=(test, test2),
+                        steps_per_epoch=int(2445*.9/4), callbacks=[callback_log],
+                        validation_steps=int(2445*.1/4))
         accuracy = history.history['val_acc'][-1]
 
         # Print the classification accuracy.
