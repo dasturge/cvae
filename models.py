@@ -71,10 +71,13 @@ def encoder(X, **params):
 def decoder(z, **params):
 
     kwargs = {}
+    rfactor = 1e-2
     if params.get('regularizer') == 'l2':
-        kwargs['activity_regularizer'] = keras.regularizers.l2(0.1)
+        kwargs['activity_regularizer'] = keras.regularizers.l2(rfactor)
     elif params.get('regularizer') == 'l1':
-        kwargs['activity_regularizer'] = keras.regularizers.l1(0.1)
+        kwargs['activity_regularizer'] = keras.regularizers.l1(rfactor)
+    elif params.get('regularizer') == 'both':
+        kwargs['activity_regularizer'] = keras.regularizers.l1_l2(l1=rfactor, l2=rfactor)
 
     fc1 = keras.layers.Dense(
         units=params['prezsize'],
@@ -123,7 +126,7 @@ def generate_variational_autoencoder(**params):
 
     optimizer = keras.optimizers.Adam(lr=params['learning_rate'])
 
-    vae.compile(optimizer=optimizer, loss=vae_loss)
+    vae.compile(optimizer=optimizer, loss=vae_loss, metrics=['mse'])
 
     return vae
 
@@ -131,10 +134,13 @@ def generate_variational_autoencoder(**params):
 def upconvconv(input_layer, **params):
 
     kwargs = {}
+    rfactor = 1e-2
     if params.get('regularizer') == 'l2':
-        kwargs['activity_regularizer'] = keras.regularizers.l2(0.1)
+        kwargs['activity_regularizer'] = keras.regularizers.l2(rfactor)
     elif params.get('regularizer') == 'l1':
-        kwargs['activity_regularizer'] = keras.regularizers.l1(0.1)
+        kwargs['activity_regularizer'] = keras.regularizers.l1(rfactor)
+    elif params.get('regularizer') == 'both':
+        kwargs['activity_regularizer'] = keras.regularizers.l1_l2(l1=rfactor, l2=rfactor)
 
     upconv1 = keras.layers.Conv2DTranspose(
         filters=params['deconv1_filters'],
@@ -164,10 +170,13 @@ def upconvconv(input_layer, **params):
 def convconvpool(input_layer, **params):
 
     kwargs = {}
+    rfactor = 1e-2
     if params.get('regularizer') == 'l2':
-        kwargs['activity_regularizer'] = keras.regularizers.l2(0.1)
+        kwargs['activity_regularizer'] = keras.regularizers.l2(rfactor)
     elif params.get('regularizer') == 'l1':
-        kwargs['activity_regularizer'] = keras.regularizers.l1(0.1)
+        kwargs['activity_regularizer'] = keras.regularizers.l1(rfactor)
+    elif params.get('regularizer') == 'both':
+        kwargs['activity_regularizer'] = keras.regularizers.l1_l2(l1=rfactor, l2=rfactor)
 
     conv1 = keras.layers.Conv2D(
         filters=params['conv1_filters'],
