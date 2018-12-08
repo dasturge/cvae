@@ -6,7 +6,7 @@ import traceback
 
 # external libs
 import skopt
-from skopt.space import Integer, Real
+from skopt.space import Integer, Real, Categorical
 from skopt.utils import use_named_args
 import tensorflow as tf
 
@@ -42,7 +42,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
 
     best_accuracy = 0.0
     best_model = os.path.join(working_dir, 'best_model.keras')
-    default_params = (1e-2, 3, 32, 32, 32, 256, 3)
+    default_params = (1e-2, 3, 32, 32, 32, 256, 3, 'l2')
 
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
     dim_layer_depth = Integer(2, 4, name='layer_depth')
@@ -51,6 +51,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
     dim_n_deconv_filters = Integer(2, 128, name='n_deconv_filters')
     dim_n_latent = Integer(2, 512, name='n_latent')
     dim_kernel_size = Integer(2, 5, name='kernel_size')
+    dim_regularizer = Categorical(categories=['l2', 'l1', 'none', 'both'], name='regularizer')
 
     dimensions = [
         dim_learning_rate,
@@ -59,12 +60,13 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
         dim_n_filters_2,
         dim_n_deconv_filters,
         dim_n_latent,
-        dim_kernel_size
+        dim_kernel_size,
+        dim_regularizer
     ]
 
     @use_named_args(dimensions=dimensions)
     def fitness(learning_rate, layer_depth, n_filters, n_filters_2,
-                n_deconv_filters, n_latent, kernel_size):
+                n_deconv_filters, n_latent, kernel_size, regularizer):
         """
 
         :param learning_rate:
@@ -81,7 +83,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
             learning_rate=learning_rate, layer_depth=layer_depth,
             n_filters=n_filters, n_filters_2=n_filters_2,
             n_deconv_filters=n_deconv_filters, n_latent=n_latent,
-            kernel_size=kernel_size
+            kernel_size=kernel_size, regularizer=regularizer
         )
 
         # create logging and TensorBoard
@@ -122,7 +124,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./'):
         return -accuracy
 
     search_result = skopt.gp_minimize(
-        func=fitness, dimensions=dimensions, acq_func='EI', n_calls=40,
+        func=fitness, dimensions=dimensions, acq_func='EI', n_calls=70,
         x0=default_params
     )
     print(search_result.x)
