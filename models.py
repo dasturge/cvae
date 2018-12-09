@@ -14,7 +14,7 @@ def parameters(*arams, **params):
         'layer_depth': 3,
         'kernel_size': (3, 3),
         'learning_rate': 1e-3,
-        'input_shape': [192, 224, 1]
+        'input_shape': [256, 256, 1]
     }
     p.update(params)
 
@@ -37,7 +37,6 @@ def sampling(args):
     z_mean, z_log_var = args
     batch = K.shape(z_mean)[0]
     dim = K.int_shape(z_mean)[1]
-    # by default, random_normal has mean=0 and std=1.0
     epsilon = K.random_normal(shape=(batch, dim))
     return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
@@ -47,7 +46,7 @@ def encoder(X, **params):
     # apply convolutions and maxpool layers
     ccp = X
     for i in range(params['layer_depth']):
-        ccp = convconvpool(ccp, **params)
+        ccp = convconvpool(ccp, ffactor=(i + 1) * params['filter_factor'], **params)
 
     flat = keras.layers.Flatten()(ccp)
 
@@ -88,12 +87,11 @@ def decoder(z, **params):
     ucc = keras.layers.Reshape((*params['prezshape'][1:-1], 1))(fc1)
 
     for i in range(params['layer_depth']):
-        ucc = upconvconv(ucc, **params)
+        ucc = upconvconv(ucc, ffactor=(params['layer_depth'] - i) * params['filter_factor'], **params)
 
     out = keras.layers.Conv2D(
         filters=1,
         kernel_size=params['kernel_size'],
-        activation='relu',
         padding='same',
         name='Xout'
     )(ucc)
@@ -120,11 +118,9 @@ def generate_variational_autoencoder(**params):
     N = np.product(params['input_shape'])
 
     def loss(x, x_decoded_mean):
-        rec_loss = N * keras.losses.\
-                mean_squared_error(x, x_decoded_mean)
-        rec_loss = K.mean(rec_loss)
+        mse = K.sum(K.square(x - x_decoded_mean))
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
-        return rec_loss + kl_loss
+        return mse + kl_loss
 
     optimizer = keras.optimizers.Adam(lr=params['learning_rate'])
 
@@ -145,28 +141,30 @@ def upconvconv(input_layer, **params):
         kwargs['activity_regularizer'] = keras.regularizers.l1_l2(l1=rfactor, l2=rfactor)
 
     upconv1 = keras.layers.Conv2DTranspose(
-        filters=params['deconv1_filters'],
+        filters=int(params['conv1_filters'] * params['ffactor']),
         kernel_size=params['kernel_size'],
         strides=2,
         padding='same',
         **kwargs
     )(input_layer)
-    conv1 = keras.layers.Conv2D(
-        filters=params['conv1_filters'],
-        kernel_size=params['kernel_size'],
-        activation='relu',
-        padding='same',
-        **kwargs
-    )(upconv1)
+    #conv1 = keras.layers.Conv2D(
+    #    filters=params['conv1_filters'],
+    #    kernel_size=params['kernel_size'],
+    #    padding='same',
+    #    **kwargs
+    #)(upconv1)
+    bn2 = keras.layers.BatchNormalization()(upconv1)
+    lrelu1 = keras.layers.LeakyReLU(alpha=0.1)(bn2)
     conv2 = keras.layers.Conv2D(
-        filters=params['conv2_filters'],
+        filters=int(params['conv2_filters'] * params['ffactor']),
         kernel_size=params['kernel_size'],
-        activation='relu',
         padding='same',
         **kwargs
-    )(conv1)
+    )(lrelu1)
+    bn3 = keras.layers.BatchNormalization()(conv2)
+    lrelu2 = keras.layers.LeakyReLU(alpha=0.1)(bn3)
 
-    return conv2
+    return lrelu2
 
 
 def convconvpool(input_layer, **params):
@@ -181,22 +179,24 @@ def convconvpool(input_layer, **params):
         kwargs['activity_regularizer'] = keras.regularizers.l1_l2(l1=rfactor, l2=rfactor)
 
     conv1 = keras.layers.Conv2D(
-        filters=params['conv1_filters'],
+        filters=int(params['conv1_filters'] * params['ffactor']),
         kernel_size=params['kernel_size'],
-        activation='relu',
         padding='same',
         **kwargs
     )(input_layer)
+    bn1 = keras.layers.BatchNormalization()(conv1)
+    lrelu1 = keras.layers.LeakyReLU(alpha=0.1)(bn1)
     conv2 = keras.layers.Conv2D(
-        filters=params['conv2_filters'],
+        filters=int(params['conv2_filters'] * params['ffactor']),
         kernel_size=params['kernel_size'],
-        activation='relu',
         padding='same',
+        strides=(2, 2),
         **kwargs
-    )(conv1)
-    maxpool1 = keras.layers.MaxPool2D(strides=2)(conv2)
+    )(lrelu1)
+    bn2 = keras.layers.BatchNormalization()(conv2)
+    lrelu2 = keras.layers.LeakyReLU(alpha=0.1)(bn2)
 
-    return maxpool1
+    return lrelu2
 
 
 def generate_conditional_vae(**params):
@@ -209,11 +209,3 @@ def generate_discriminator(**params):
 
 def plot(model, filename='model.png'):
     keras.utils.plot_model(model, to_file=filename)
-
-def get_loss_fn(N, var, mean):
-    def loss(x, x_decoded_mean):
-        rec_loss = np.product([4, 192, 224, 1]) * keras.losses.\
-                mean_squared_error(x, x_decoded_mean)
-        rec_loss = K.mean(rec_loss)
-        kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
-        return rec_loss + kl_loss

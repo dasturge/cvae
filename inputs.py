@@ -127,17 +127,14 @@ def single_image_parser(serialized):
     image = tf.reshape(image, (182, 218, 1))
     m = tf.math.reduce_min(image)
     image = (image - m) / (tf.math.reduce_max(image) - m)
-    padding = tf.constant([[5, 5], [3, 3], [0, 0]])  # makes numbers divisible by 16
+    padding = tf.constant([[37, 37], [19, 19], [0, 0]])  # pad to power of 2 (probably way inefficient)
     image = tf.pad(image, padding)
 
-
-    # one_hot = example['y']
-
-    return image #, one_hot
+    return image, image
 
 
 def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
-                   shuffle=False, labels=False):
+                   shuffle=True, labels=False):
 
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)
@@ -152,9 +149,9 @@ def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
 
     # autoencoder has same input and validation
     iterator = dataset.make_one_shot_iterator()
-    iterator2 = dataset.make_one_shot_iterator()
-    image_batch = iterator.get_next()
-    image_batch2 = iterator2.get_next()
+    # iterator2 = dataset.make_one_shot_iterator()
+    image_batch, image_batch2 = iterator.get_next()
+    # image_batch2 = iterator2.get_next()
 
     if labels:
         x = {'X': image_batch, 'y': label_batch}
@@ -168,4 +165,3 @@ def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
 
 if __name__ == '__main__':
     _cli()
-    tf.nn.conv2d
