@@ -18,7 +18,7 @@ import models
 K = tf.keras.backend
 TensorBoard = tf.keras.callbacks.TensorBoard
 model_generator = models.generate_variational_autoencoder
-best_accuracy = 0.0
+best_mse = 0.0
 
 
 def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
@@ -41,10 +41,10 @@ def create_model(learning_rate, layer_depth, n_filters, n_filters_2,
 
 def hyperparameter_optimization(record_files, test_record, working_dir='./', n_jobs=1):
 
-    global best_accuracy
-    best_accuracy = 0.0
+    global best_mse
+    best_mse = 0.0
     best_model = os.path.join(working_dir, 'best_model.keras')
-    default_params = (1e-6, 3, 32, 45, 72, 197, 3, 'both')
+    default_params = (3e-4, 3, 32, 6, 114, 362, 4, 'l1')
     dim_learning_rate = Real(low=1e-6, high=1e-2, prior='log-uniform', name='learning_rate')
     dim_layer_depth = Integer(2, 4, name='layer_depth')
     dim_n_filters = Integer(2, 64, name='n_filters')
@@ -103,7 +103,7 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./', n_j
             history = m.fit(x=train, y=train2, epochs=5, validation_data=(test, test2),
                         steps_per_epoch=int(2445*.9/4), callbacks=[callback_log],
                         validation_steps=int(2445*.1/4))
-            accuracy = history.history['val_mean_squared_error'][-1]
+            mse = history.history['val_mean_squared_error'][-1]
         except Exception as e:
             print('failed with params:')
             print((learning_rate, layer_depth, n_filters, n_filters_2,
@@ -112,24 +112,24 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./', n_j
             return 0.0
 
         # Print the classification accuracy.
-        print("Accuracy: {0:.2%}".format(accuracy))
+        print("Accuracy: {0:.2%}".format(mse))
 
         # get the previous best
-        global best_accuracy
+        global best_mse
 
         # If the classification accuracy of the saved model is improved ...
-        if accuracy > best_accuracy:
+        if mse < best_mse:
             # Save the new model to disk
             m.save(best_model)
 
             # Update the classification accuracy.
-            best_accuracy = accuracy
+            best_mse = mse
 
         # clear data from memory
         del m
         K.clear_session()
 
-        return -accuracy
+        return mse
 
     search_result = skopt.gp_minimize(
         func=fitness, dimensions=dimensions, acq_func='EI', n_calls=70,
