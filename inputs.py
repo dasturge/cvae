@@ -74,9 +74,9 @@ def write_tfrecord(filename, feature_sets, clobber=True):
             feature = {}
             for name, data in data_dict.items():
                 if isinstance(data, np.ndarray):
-                    data = data[85, :, :]  # pick a z-slice
+                    data = data[:, :, 85]  # pick a z-slice
                     # write numpy array into tf bytes feature
-                    bytess = data.tobytes()
+                    bytess = data.tostring()
                     feature[f'{name}'] = _bytes_feature(tf.compat.as_bytes(bytess))
                 elif isinstance(data, str):
                     code = label_dict[data]
@@ -168,3 +168,4 @@ def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
 
 if __name__ == '__main__':
     _cli()
+    tf.nn.conv2d

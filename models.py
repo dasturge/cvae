@@ -117,8 +117,10 @@ def generate_variational_autoencoder(**params):
 
     vae = keras.Model(X, y)
 
+    N = np.product(params['input_shape'])
+
     def loss(x, x_decoded_mean):
-        rec_loss = np.product(params['input_shape']) * keras.losses.\
+        rec_loss = N * keras.losses.\
                 mean_squared_error(x, x_decoded_mean)
         rec_loss = K.mean(rec_loss)
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
@@ -207,3 +209,11 @@ def generate_discriminator(**params):
 
 def plot(model, filename='model.png'):
     keras.utils.plot_model(model, to_file=filename)
+
+def get_loss_fn(N, var, mean):
+    def loss(x, x_decoded_mean):
+        rec_loss = np.product([4, 192, 224, 1]) * keras.losses.\
+                mean_squared_error(x, x_decoded_mean)
+        rec_loss = K.mean(rec_loss)
+        kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
+        return rec_loss + kl_loss
