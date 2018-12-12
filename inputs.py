@@ -126,10 +126,22 @@ def single_image_parser(serialized):
     image = tf.decode_raw(image_raw, tf.float32)
     image = tf.reshape(image, (182, 218, 1))
     m = tf.math.reduce_min(image)
-    image = (image - m) / (tf.math.reduce_max(image) - m)
-    padding = tf.constant([[37, 37], [19, 19], [0, 0]])  # pad to power of 2 (probably way inefficient)
-    image = tf.pad(image, padding)
+    M = tf.contrib.distributions.percentile(image, q=99)
+    image = (image - m) / (M - m)
+    # image = tf.image.random_contrast(image, lower=0.3, upper=2.0)
+    # image = tf.image.random_brightness(image, max_delta=2.0)
+    #  padding = tf.constant([[37, 37], [19, 19], [0, 0]])  # pad to power of 2 (probably way inefficient)
+    #  image = tf.pad(image, padding)
 
+    return image, image
+
+
+def preproc(image, *args):
+    mask = tf.where(image > 0.0, tf.ones_like(image), tf.zeros_like(image))
+    image = tf.image.random_contrast(image, lower=0.66, upper=1.5)
+    image = image + tf.random_normal(shape=tf.shape(image), mean=0.0, stddev=0.1)
+    image = tf.image.random_flip_up_down(image)  # images are stored x = A->P
+    image = image * mask  # image is skull stripped, brain is the only nonzero area
     return image, image
 
 
@@ -139,6 +151,7 @@ def image_input_fn(filenames, train, batch_size=4, buffer_size=512,
     dataset = tf.data.TFRecordDataset(filenames=filenames)
     dataset = dataset.map(single_image_parser)
     if train:
+    #    dataset = dataset.map(preproc)
         if shuffle:
             dataset = dataset.shuffle(buffer_size=buffer_size)
         num_repeat = None

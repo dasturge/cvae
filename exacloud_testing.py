@@ -68,9 +68,10 @@ def maybe_create_2D_record():
     return train_record, test_record
 
 
-def run_hyperparameter_optimization(train_record, test_record, working_dir):
+def run_hyperparameter_optimization(train_record, test_record, working_dir, n_jobs=1):
     # this may require no real prep
-    run.hyperparameter_optimization(train_record, test_record, working_dir=working_dir)
+    run.hyperparameter_optimization(train_record, test_record, working_dir=working_dir,
+                                    n_jobs=n_jobs)
 
 
 if __name__ == '__main__':
@@ -84,4 +85,3 @@ if __name__ == '__main__':
         wd = os.path.join(PROJECT_ROOT, sys.argv[1])
         os.makedirs(wd, exist_ok=True)
     run_hyperparameter_optimization([train_record], [test_record], working_dir=wd)
-

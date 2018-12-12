@@ -3,7 +3,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # can't use gpu on this machine for s
 
 import tensorflow as tf
 import tensorflow.keras as keras
-import tensorflow.keras.backend as K
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
@@ -58,37 +57,46 @@ def plot_predicted_images(images, model=best_model):
     plt.show()
 
 
-def plot_2d_manifold(n=10, model=best_model, idx1=0, idx2=1):
+def plot_2d_manifold(n=7, model=best_model, idx1=0, idx1b=1, idx2=1, idx2b=2):
     if isinstance(model, str):
         model = load_model(model)
     latent_dim = model.get_layer('z').output_shape[1]
 
-    z1 = scipy.stats.norm.ppf(np.linspace(0.01, 0.99, n))
-    z2 = scipy.stats.norm.ppf(np.linspace(0.01, 0.99, n))
+    z1 = scipy.stats.norm.ppf(np.linspace(0.00001, 0.99999, n))
+    z2 = scipy.stats.norm.ppf(np.linspace(0.00001, 0.99999, n))
     ax_grid = np.dstack(np.meshgrid(z1, z2))
     ax_grid_batch = ax_grid.reshape(n * n, 2)
     z_input = np.zeros((n * n, latent_dim))
-    z_input[:, idx1] = ax_grid_batch[:, 0]
-    z_input[:, idx2] = ax_grid_batch[:, 1]
+    z_input[:, idx1:idx1b] = np.repeat(ax_grid_batch[:, 0][..., np.newaxis], idx1b-idx1, axis=1)
+    z_input[:, idx2:idx2b] = np.repeat(ax_grid_batch[:, 1][..., np.newaxis], idx2b-idx2, axis=1)
 
     # i hope the model can handle this many images
-    xout_grid = get_layer_outputs(z_input, model, 'z', 'Xout').\
-        reshape(n, n, 218, 182)
+    xout_grid = get_layer_outputs(
+        z_input,
+        model,
+        input_layer='dense_2',
+        output_layer='Xout'
+    ).reshape(n, n, 182, 218)
     plt.figure(figsize=(n, n))
-    plt.imshow(np.block(list(map(list, xout_grid))), cmap='gray')
+    plt.imshow(np.block(list(map(list, xout_grid))).T, cmap='gray')
     plt.show()
 
 
 def get_layer_outputs(image, model=best_model, input_layer='X', output_layer='Xout'):
     if isinstance(model, str):
         model = keras.models.load_model(model)
-    if len(image.shape) == 2:
+    if input_layer == 'X' and len(image.shape) == 2:
+        # pad axes if this is supposed to be a "batch" of images
         image = image[np.newaxis, ...]
         image = image[..., np.newaxis]
     input = model.get_layer(input_layer).input
-
-    out = keras.Model(inputs=input, outputs=model.get_layer(output_layer).output)
-    layer_output = out.predict(image)
+    if input_layer == 'X':
+        new_model = tf.keras.Model(inputs=input, outputs=model.get_layer(output_layer).output)
+    elif output_layer == 'Xout':
+        new_model = models.extract_decoder(model, input_layer)
+    else:
+        print('please specif')
+    layer_output = new_model.predict(image)
 
     return layer_output
 
@@ -98,4 +106,4 @@ if __name__ == '__main__':
     model = load_model()
     plot_predicted_images(images, model)
 
-    # plot_2d_manifold(10, model)
+    plot_2d_manifold(5, model, idx1=0, idx1b=100, idx2=300, idx2b=400)
