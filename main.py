@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 import inputs
-from run import create_model
+from optimization import create_model
 
 # define shorthands
 TensorBoard = tf.keras.callbacks.TensorBoard

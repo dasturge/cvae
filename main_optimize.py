@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 import inputs
-import run
+import optimization
 
 PROJECT_ROOT = os.path.expanduser('~/cvae')
 NIFTI_SRC_ROOT = '/home/exacloud/lustre1/fnl_lab'
@@ -71,8 +71,8 @@ def maybe_create_2D_record():
 def run_hyperparameter_optimization(train_record, test_record, working_dir,
                                     n_jobs=1):
     # this may require no real prep
-    run.hyperparameter_optimization(train_record, test_record,
-                                    working_dir=working_dir, n_jobs=n_jobs)
+    optimization.hyperparameter_optimization(train_record, test_record,
+                                             working_dir=working_dir, n_jobs=n_jobs)
 
 
 if __name__ == '__main__':
