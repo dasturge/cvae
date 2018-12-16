@@ -1,27 +1,10 @@
-import argparse
-import os
-
-import numpy as np
 import tensorflow as tf
-TensorBoard = tf.keras.callbacks.TensorBoard
 
 import inputs
 from run import create_model
 
-
-def _cli():
-    parser = generate_parser()
-    args = parser.parse_args()
-
-    return main()
-
-
-def generate_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--data')
-    parser.add_argument('--mock', action='store_true')
-
-    return parser
+# define shorthands
+TensorBoard = tf.keras.callbacks.TensorBoard
 
 
 def main():
@@ -30,7 +13,7 @@ def main():
     test_record = ['./model/test.tfrecord']
     pickup_where_i_left_off = False
 
-    params = (7, 12, 28, 2, 700)
+    params = (7, 18, 28, 2, 800)
 
     model = create_model(
         *params
@@ -61,4 +44,4 @@ def main():
 
 
 if __name__ == '__main__':
-    _cli()
+    main()

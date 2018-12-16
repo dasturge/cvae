@@ -62,11 +62,15 @@ def plot_2d_manifold(n=7, model=best_model, idx1=0, idx1b=1, idx2=1, idx2b=2):
         model = load_model(model)
     latent_dim = model.get_layer('z').output_shape[1]
 
-    z1 = scipy.stats.norm.ppf(np.linspace(0.00001, 0.99999, n))
-    z2 = scipy.stats.norm.ppf(np.linspace(0.00001, 0.99999, n))
+    # take a normally spaced variable about 0.
+    z1 = scipy.stats.norm.ppf(np.linspace(0.01, 0.99, n))
+    z2 = scipy.stats.norm.ppf(np.linspace(0.01, 0.99, n))
+    # create a meshgrid of normed values to insert into latent space vector
     ax_grid = np.dstack(np.meshgrid(z1, z2))
     ax_grid_batch = ax_grid.reshape(n * n, 2)
+    # create latent space inputs, NxN batch-size x latent space size
     z_input = np.zeros((n * n, latent_dim))
+    # create vectors in the latent space instead of a univariate variation.
     z_input[:, idx1:idx1b] = np.repeat(ax_grid_batch[:, 0][..., np.newaxis], idx1b-idx1, axis=1)
     z_input[:, idx2:idx2b] = np.repeat(ax_grid_batch[:, 1][..., np.newaxis], idx2b-idx2, axis=1)
 
@@ -93,9 +97,10 @@ def get_layer_outputs(image, model=best_model, input_layer='X', output_layer='Xo
     if input_layer == 'X':
         new_model = tf.keras.Model(inputs=input, outputs=model.get_layer(output_layer).output)
     elif output_layer == 'Xout':
+        # its a more complex process to extract outputs of an intermediate layer in keras
         new_model = models.extract_decoder(model, input_layer)
     else:
-        print('please specif')
+        print('please specify a different input_layer or output_layer')
     layer_output = new_model.predict(image)
 
     return layer_output
@@ -104,6 +109,7 @@ def get_layer_outputs(image, model=best_model, input_layer='X', output_layer='Xo
 if __name__ == '__main__':
     images = imloader.load_some_images()
     model = load_model()
+    # plot before/after images
     plot_predicted_images(images, model)
-
-    plot_2d_manifold(5, model, idx1=0, idx1b=100, idx2=300, idx2b=400)
+    # plot latent space manifold
+    plot_2d_manifold(5, model, idx1=0, idx1b=20, idx2=300, idx2b=320)

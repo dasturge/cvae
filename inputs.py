@@ -7,8 +7,6 @@ import nibabel as nb
 import numpy as np
 import tensorflow as tf
 
-import scipy.ndimage
-
 scanner_name = re.compile('.*/ABCD_(.*)_SEFMNoT2/.*')
 
 

@@ -9,7 +9,7 @@ import numpy as np
 import inputs
 import run
 
-PROJECT_ROOT = '/home/exacloud/lustre1/fnl_lab/projects/darrick_cnn'
+PROJECT_ROOT = os.path.expanduser('~/cvae')
 NIFTI_SRC_ROOT = '/home/exacloud/lustre1/fnl_lab'
 ESTIMATOR_FOLDER = os.path.join(PROJECT_ROOT, 'vae_model')
 TMPDIR = '/mnt/scratch/darrick_cnn'
@@ -68,20 +68,22 @@ def maybe_create_2D_record():
     return train_record, test_record
 
 
-def run_hyperparameter_optimization(train_record, test_record, working_dir, n_jobs=1):
+def run_hyperparameter_optimization(train_record, test_record, working_dir,
+                                    n_jobs=1):
     # this may require no real prep
-    run.hyperparameter_optimization(train_record, test_record, working_dir=working_dir,
-                                    n_jobs=n_jobs)
+    run.hyperparameter_optimization(train_record, test_record,
+                                    working_dir=working_dir, n_jobs=n_jobs)
 
 
 if __name__ == '__main__':
     # train_record, test_record = maybe_create_2D_record()
-    wd = '/home/euler/PycharmProjects/cvae/model'  # don't do any /mnt/scratch
-    train_record = os.path.join(wd, 'train.tfrecord')
-    test_record = os.path.join(wd, 'test.tfrecord')
+    wd = os.path.join(PROJECT_ROOT, 'model') # don't do any /mnt/scratch
+    train_record = os.path.join(PROJECT_ROOT, 'train.tfrecord')
+    test_record = os.path.join(PROJECT_ROOT, 'test.tfrecord')
     try:
         os.makedirs(wd, exist_ok=True)
     except PermissionError:
         wd = os.path.join(PROJECT_ROOT, sys.argv[1])
         os.makedirs(wd, exist_ok=True)
-    run_hyperparameter_optimization([train_record], [test_record], working_dir=wd)
+    run_hyperparameter_optimization([train_record], [test_record],
+                                    working_dir=wd)

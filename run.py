@@ -123,6 +123,8 @@ def hyperparameter_optimization(record_files, test_record, working_dir='./', n_j
             print((layer_depth, n_filters, n_filters_2,
                 filter_factor, n_latent))
             traceback.print_exc()
+            del m  # this fixes OOM crashes I was getting I believe
+            K.clear_session()
             return 10.0  # large mse for params that can't work
 
         # Print the classification accuracy.

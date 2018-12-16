@@ -14,7 +14,7 @@ def parameters(*arams, **params):
         'n_latent': 256,
         'layer_depth': 3,
         'kernel_size': (3, 3),
-        'learning_rate': 1e-3,
+        'learning_rate': 1e-5,
         'input_shape': [256, 256, 1]
     }
     p.update(params)
@@ -135,13 +135,13 @@ def generate_variational_autoencoder(**params):
         # mi = tf.py_func(mutual_information, [x, x_decoded_mean], Tout=[tf.float32])
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
 
-        return sse + ssed * .8 + 0.1 * kl_loss
+        return sse + 10 * ssed + kl_loss
 
     def loss_cc(x, x_decoded):
-        sse = K.sum(K.square(x - x_decoded), axis=[1, 2, 3])
-        cc = local_cc(x, x_decoded, kernel_size=3)
+        sae = K.sum(K.abs(x - x_decoded), axis=[1, 2, 3])
+        cc = local_cc(x, x_decoded, kernel_size=5)
         kl_loss = - 0.5 * K.sum(1 + var - K.square(mean) - K.exp(var), axis=-1)
-        return sse + kl_loss - cc * .0001
+        return sae + kl_loss + cc * .0001
 
     def loss_mi(x, x_decoded):
         mi = mutual_information(x, x_decoded)
@@ -150,7 +150,7 @@ def generate_variational_autoencoder(**params):
 
     optimizer = keras.optimizers.Adam(lr=params['learning_rate'])
 
-    vae.compile(optimizer=optimizer, loss=loss_cc, metrics=['mse'])
+    vae.compile(optimizer=optimizer, loss=loss, metrics=['mse'])
 
     return vae
 
@@ -304,7 +304,7 @@ def local_cc(x, y, kernel_size=3, padding='VALID'):
     """
     # get kernel patches
     x_patches = tf.extract_image_patches(
-        x, [1, kernel_size, kernel_size, 1], [1, 1, 1, 1], [1, 1, 1, 1], 
+        x, [1, kernel_size, kernel_size, 1], [1, 1, 1, 1], [1, 1, 1, 1],
         padding=padding)
     y_patches = tf.extract_image_patches(
         y, [1, kernel_size, kernel_size, 1], [1, 1, 1, 1], [1, 1, 1, 1],
@@ -322,19 +322,17 @@ def local_cc(x, y, kernel_size=3, padding='VALID'):
         elems=[x_patches, y_patches],
         dtype=tf.float32
     )
-
     # sum cross correlation and average over kernel size
-    total_cc = tf.reduce_sum(lcc) / kernel_size ** 2
-
+    total_cc = tf.reduce_sum(1 - tf.square(lcc))
     return total_cc
 
 
 def image_cc(z):
-    return tf.nn.conv2d(
+    return tf.reduce_mean(tf.nn.conv2d(
             tf.expand_dims(z[0], 0),
             tf.expand_dims(z[1], 3),
             strides=[1, 1, 1, 1],
-            padding="VALID")
+            padding="VALID"))
 
 
 def mutual_information(a, b):
